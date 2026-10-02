@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostList from '../components/PostList.astro';
+import { getPosts, type Post } from '../utils';
+import { langs, localize, useTranslations, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  tag: string;
+  posts: Post[];
+}
+
+const { lang, tag, posts } = Astro.props;
+const t = useTranslations(lang);
+
+// Link to the same tag in the other language if it exists there, otherwise to its tag index
+const alternates = Object.fromEntries(
+  await Promise.all(
+    langs.map(async (l) => {
+      const has = (await getPosts(l)).some((p) => p.data.tags.includes(tag));
+      return [l, localize(l, has ? `/tags/${tag}/` : '/tags/')];
+    }),
+  ),
+) as Record<Lang, string>;
+---
+
+<BaseLayout title={`#${tag}`} description={`${t('tag.description')} ${tag}`} alternates={alternates}>
+  <p class="label"><a href={localize(lang, '/tags/')}>{t('tags.title')}</a></p>
+  <h1><span class="hash">#</span>{tag}</h1>
+  <PostList posts={posts} />
+</BaseLayout>
+
+<style>
+  .label { margin-top: 1rem; }
+  .label a { color: inherit; }
+  .hash { color: var(--pink); margin-right: .15rem; font-family: var(--font-mono); font-weight: 400; }
+</style>

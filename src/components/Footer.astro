@@ -1,0 +1,36 @@
+---
+import { SITE_SUBTITLE } from '../consts';
+import { localize, useTranslations, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+---
+
+<footer>
+  <p>
+    © {year} {SITE_SUBTITLE} <span class="dot">·</span> <a href={localize(lang, '/rss.xml')}>rss</a>
+    <span class="dot">·</span> {t('footer.made')}
+  </p>
+</footer>
+
+<style>
+  footer {
+    max-width: var(--width);
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2.5rem;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-head);
+    font-size: .8rem;
+    color: var(--muted);
+  }
+  p { margin: 0; }
+  .dot { color: var(--pink); margin: 0 .2rem; }
+  a { color: var(--muted); }
+  a:hover { color: var(--pink); }
+</style>

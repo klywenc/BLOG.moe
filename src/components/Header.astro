@@ -1,0 +1,107 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import LangSwitch from './LangSwitch.astro';
+import { localize, stripLang, useTranslations, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  alternates: Record<Lang, string | null>;
+}
+
+const { lang, alternates } = Astro.props;
+const t = useTranslations(lang);
+
+const links = [
+  { href: '/', label: t('nav.posts') },
+  { href: '/tags/', label: t('nav.tags') },
+  { href: '/about/', label: t('nav.about') },
+];
+const path = stripLang(Astro.url.pathname);
+const isActive = (href: string) =>
+  href === '/' ? path === '/' || path.startsWith('/posts') : path.startsWith(href);
+---
+
+<header>
+  <nav>
+    <a href={localize(lang, '/')} class="logo" aria-label="hard.fault, home">
+      <span class="prompt">~/</span>hard<span class="dot">.</span>fault<span class="cursor" aria-hidden="true">_</span>
+    </a>
+    <div class="right">
+      <ul>
+        {links.map(({ href, label }) => (
+          <li><a href={localize(lang, href)} class:list={{ active: isActive(href) }}>{label}</a></li>
+        ))}
+      </ul>
+      <button type="button" class="search-btn" data-search-open aria-label={t('search.open')}>
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></svg>
+        <kbd>Ctrl K</kbd>
+      </button>
+      <LangSwitch lang={lang} alternates={alternates} />
+      <ThemeToggle label={t('theme.toggle')} />
+    </div>
+  </nav>
+</header>
+
+<style>
+  nav {
+    max-width: var(--width);
+    margin: 0 auto;
+    padding: 1.4rem 1rem .6rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .8rem 1rem;
+  }
+  .logo {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 1.05rem;
+    color: var(--fg-strong);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .prompt { color: var(--purple); }
+  .dot { color: var(--pink); font-weight: 700; }
+  .cursor { color: var(--pink); animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .logo:hover { color: var(--fg-strong); }
+
+  .right { display: flex; align-items: center; gap: .9rem; }
+  ul { list-style: none; display: flex; gap: .9rem; margin: 0; padding: 0; }
+  ul a {
+    font-family: var(--font-head);
+    font-weight: 500;
+    font-size: .92rem;
+    color: var(--muted);
+    text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 2px solid transparent;
+  }
+  ul a:hover { color: var(--purple); }
+  ul a.active { color: var(--fg-strong); border-bottom-color: var(--pink); }
+
+  .search-btn {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    height: 2rem;
+    padding: 0 .5rem 0 .6rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--purple-soft);
+    color: var(--purple);
+    cursor: pointer;
+  }
+  .search-btn:hover { color: var(--pink); }
+  .search-btn kbd {
+    font-size: .68rem;
+    border: 0;
+    padding: .05rem .35rem;
+    background: var(--bg);
+    color: var(--muted);
+  }
+  @media (max-width: 30rem) {
+    .search-btn kbd { display: none; }
+  }
+</style>

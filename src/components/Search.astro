@@ -1,0 +1,353 @@
+---
+import { useTranslations, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<dialog id="search" data-lang={lang} data-empty={t('search.empty')} data-matches={t('search.matches')}>
+  <div class="box">
+    <div class="top">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2" />
+        <path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <input type="search" placeholder={t('search.placeholder')} aria-label={t('search.open')} autocomplete="off" spellcheck="false" />
+      <div class="scope" role="tablist">
+        <button type="button" role="tab" data-scope="page">{t('search.page')}</button>
+        <button type="button" role="tab" data-scope="site">{t('search.site')}</button>
+      </div>
+    </div>
+    <p class="status" aria-live="polite"></p>
+    <ul class="results"></ul>
+    <p class="hint">{t('search.hint')}</p>
+  </div>
+</dialog>
+
+<script>
+  type Doc = { lang: string; url: string; title: string; description: string; tags: string[]; text: string };
+  type Indexed = Doc & { f: { title: string; description: string; tags: string; text: string } };
+  type Scope = 'page' | 'site';
+
+  const dialog = document.getElementById('search') as HTMLDialogElement;
+  const input = dialog.querySelector('input')!;
+  const list = dialog.querySelector<HTMLUListElement>('.results')!;
+  const status = dialog.querySelector<HTMLParagraphElement>('.status')!;
+  const scopeButtons = dialog.querySelectorAll<HTMLButtonElement>('[data-scope]');
+  const { lang, empty, matches } = dialog.dataset;
+
+  let scope: Scope = 'site';
+  let docs: Indexed[] | null = null;
+  let hits: HTMLElement[] = [];
+  let active = 0;
+  let picked = false;
+  let timer: number | undefined;
+
+  // Case- and diacritic-insensitive folding that keeps string length 1:1,
+  // so indexes in the folded string map straight back to the original.
+  function fold(s: string) {
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (c === 'ł' || c === 'Ł') { out += 'l'; continue; }
+      const base = (c.normalize('NFD')[0] ?? c).toLowerCase();
+      out += base.length === 1 ? base : c;
+    }
+    return out;
+  }
+
+  const escape = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+  function highlight(text: string, terms: string[]) {
+    const f = fold(text);
+    const ranges: [number, number][] = [];
+    for (const term of terms) {
+      for (let i = f.indexOf(term); i >= 0; i = f.indexOf(term, i + term.length)) ranges.push([i, i + term.length]);
+    }
+    ranges.sort((a, b) => a[0] - b[0]);
+    let html = '';
+    let pos = 0;
+    for (const [start, end] of ranges) {
+      if (start < pos) continue;
+      html += escape(text.slice(pos, start)) + '<mark>' + escape(text.slice(start, end)) + '</mark>';
+      pos = end;
+    }
+    return html + escape(text.slice(pos));
+  }
+
+  function excerpt(text: string, at: number, len: number) {
+    const start = Math.max(0, at - 50);
+    const end = Math.min(text.length, at + len + 90);
+    return (start > 0 ? '…' : '') + text.slice(start, end).trim() + (end < text.length ? '…' : '');
+  }
+
+  // ───────── whole site ─────────
+  async function loadDocs() {
+    if (!docs) {
+      const all: Doc[] = await (await fetch('/search.json')).json();
+      docs = all
+        .filter((d) => d.lang === lang)
+        .map((d) => ({
+          ...d,
+          f: { title: fold(d.title), description: fold(d.description), tags: fold(d.tags.join(' ')), text: fold(d.text) },
+        }));
+    }
+    return docs;
+  }
+
+  async function searchSite(query: string) {
+    const terms = fold(query).split(/\s+/).filter(Boolean);
+    if (!terms.length) return render([]);
+    const results = (await loadDocs())
+      .map((d) => {
+        let score = 0;
+        for (const term of terms) {
+          const s =
+            (d.f.title.includes(term) ? 10 : 0) +
+            (d.f.tags.includes(term) ? 5 : 0) +
+            (d.f.description.includes(term) ? 3 : 0) +
+            (d.f.text.includes(term) ? 1 : 0);
+          if (!s) return null;
+          score += s;
+        }
+        const at = terms.map((term) => d.f.text.indexOf(term)).find((i) => i >= 0);
+        const snippet = at === undefined ? d.description : excerpt(d.text, at, terms[0].length);
+        return { d, score, snippet };
+      })
+      .filter((r) => r !== null)
+      .sort((a, b) => b.score - a.score);
+
+    render(
+      results.map(({ d, snippet }) => ({
+        html: `<span class="title">${highlight(d.title, terms)}</span><span class="snippet">${highlight(snippet, terms)}</span>`,
+        go: () => (location.href = d.url),
+      })),
+    );
+  }
+
+  // ───────── this page ─────────
+  function clearMarks() {
+    for (const mark of hits) {
+      const parent = mark.parentNode;
+      if (!parent) continue;
+      parent.replaceChild(document.createTextNode(mark.textContent ?? ''), mark);
+      parent.normalize();
+    }
+    hits = [];
+  }
+
+  function searchPage(query: string) {
+    clearMarks();
+    const term = fold(query.trim());
+    if (!term) return render([]);
+
+    const root = document.querySelector('main')!;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) =>
+        n.parentElement?.closest('script, style, dialog') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
+    const nodes: Text[] = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+
+    for (const node of nodes) {
+      const f = fold(node.data);
+      const at: number[] = [];
+      for (let i = f.indexOf(term); i >= 0; i = f.indexOf(term, i + term.length)) at.push(i);
+      const marks: HTMLElement[] = [];
+      // split from the end so earlier offsets stay valid
+      for (const i of at.reverse()) {
+        const match = node.splitText(i);
+        match.splitText(term.length);
+        const mark = document.createElement('mark');
+        mark.className = 'find-hit';
+        match.replaceWith(mark);
+        mark.append(match);
+        marks.unshift(mark);
+      }
+      hits.push(...marks);
+    }
+
+    render(
+      hits.slice(0, 100).map((mark) => {
+        const block = mark.closest('p, li, td, th, pre, h1, h2, h3, h4, blockquote, dd, dt') ?? mark.parentElement!;
+        const range = document.createRange();
+        range.setStart(block, 0);
+        range.setEndBefore(mark);
+        const text = block.textContent ?? '';
+        const snippet = excerpt(text, range.toString().length, term.length);
+        return {
+          html: `<span class="snippet">${highlight(snippet, [term])}</span>`,
+          go: () => {
+            picked = true;
+            dialog.close();
+            hits.forEach((h) => h.classList.toggle('current', h === mark));
+            mark.scrollIntoView({ block: 'center' });
+          },
+        };
+      }),
+      hits.length,
+    );
+  }
+
+  // ───────── shared ui ─────────
+  let actions: (() => void)[] = [];
+
+  function render(items: { html: string; go: () => void }[], total = items.length) {
+    actions = items.map((i) => i.go);
+    active = 0;
+    list.innerHTML = items.map((i, n) => `<li><button type="button" data-i="${n}">${i.html}</button></li>`).join('');
+    const hasQuery = input.value.trim() !== '';
+    status.textContent = !hasQuery ? '' : total ? `${total} ${matches}` : empty ?? '';
+    paintActive();
+  }
+
+  function paintActive() {
+    list.querySelectorAll('button').forEach((b, i) => {
+      b.classList.toggle('active', i === active);
+      if (i === active) b.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  function run() {
+    clearTimeout(timer);
+    timer = window.setTimeout(() => (scope === 'site' ? searchSite(input.value) : searchPage(input.value)), 80);
+  }
+
+  function setScope(next: Scope) {
+    scope = next;
+    scopeButtons.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.scope === scope)));
+    if (scope === 'site') clearMarks();
+    run();
+    input.focus();
+  }
+
+  function open() {
+    clearMarks();
+    picked = false;
+    dialog.showModal();
+    input.select();
+    setScope(scope);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyK' || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    e.preventDefault();
+    if (dialog.open) setScope(scope === 'site' ? 'page' : 'site');
+    else open();
+  });
+
+  document.querySelectorAll('[data-search-open]').forEach((b) => b.addEventListener('click', open));
+  scopeButtons.forEach((b) => b.addEventListener('click', () => setScope(b.dataset.scope as Scope)));
+  input.addEventListener('input', run);
+
+  input.addEventListener('keydown', (e) => {
+    if (!actions.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % actions.length; paintActive(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); active = (active - 1 + actions.length) % actions.length; paintActive(); }
+    else if (e.key === 'Enter') { e.preventDefault(); actions[active](); }
+  });
+
+  list.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-i]');
+    if (btn) actions[Number(btn.dataset.i)]();
+  });
+
+  // click on the backdrop closes
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener('close', () => { if (!picked) clearMarks(); });
+</script>
+
+<style>
+  dialog {
+    width: min(36rem, calc(100% - 2rem));
+    max-height: min(32rem, calc(100vh - 6rem));
+    margin: 4rem auto auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--fg);
+    box-shadow: 0 20px 50px rgb(20 10 40 / .25);
+    overflow: hidden;
+  }
+  dialog[open] { display: flex; }
+  dialog::backdrop { background: rgb(15 10 30 / .45); }
+  .box { display: flex; flex-direction: column; width: 100%; min-height: 0; }
+
+  .top {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .7rem .9rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--purple);
+  }
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: none;
+    color: var(--fg-strong);
+    font: inherit;
+    font-size: 1rem;
+  }
+  input::-webkit-search-cancel-button { display: none; }
+
+  .scope { display: flex; padding: 2px; border-radius: 999px; background: var(--purple-soft); flex-shrink: 0; }
+  .scope button {
+    border: 0;
+    padding: .15rem .6rem;
+    border-radius: 999px;
+    background: none;
+    color: var(--purple);
+    font: inherit;
+    font-size: .75rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .scope button[aria-selected='true'] { background: var(--bg); color: var(--fg-strong); }
+
+  .status { margin: 0; padding: .4rem 1rem 0; font-size: .75rem; color: var(--muted); }
+  .status:empty { display: none; }
+
+  .results { list-style: none; margin: 0; padding: .4rem; overflow-y: auto; flex: 1; min-height: 0; }
+  .results:empty { display: none; }
+  .results li::marker { content: none; }
+  .results :global(button) {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    width: 100%;
+    padding: .55rem .7rem;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--fg);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .results :global(button.active),
+  .results :global(button:hover) { background: var(--purple-soft); }
+  .results :global(.title) { font-weight: 600; color: var(--fg-strong); }
+  .results :global(.snippet) { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+  .results :global(mark) { background: var(--pink-soft); color: var(--pink); border-radius: 3px; padding: 0 1px; }
+
+  .hint {
+    margin: 0;
+    padding: .5rem 1rem;
+    border-top: 1px solid var(--border);
+    font-size: .72rem;
+    color: var(--muted);
+  }
+
+  /* in-page highlights */
+  :global(mark.find-hit) { background: var(--pink-soft); color: inherit; border-radius: 3px; }
+  :global(mark.find-hit.current) { background: var(--pink); color: var(--bg); }
+</style>

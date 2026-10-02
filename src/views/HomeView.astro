@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostList from '../components/PostList.astro';
+import { getPosts } from '../utils';
+import { SITE_SUBTITLE } from '../consts';
+import { useTranslations, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const posts = await getPosts(lang);
+---
+
+<BaseLayout>
+  <section class="intro">
+    <p class="kicker">{SITE_SUBTITLE}</p>
+    <h1>
+      {t('home.title')} <span class="tail">{t('home.titleTail')}</span>
+    </h1>
+    <p class="lead">{t('home.lead')}</p>
+  </section>
+
+  <p class="label">{t('home.latest')}</p>
+  {posts.length > 0 ? <PostList posts={posts} /> : <p class="muted">{t('home.empty')}</p>}
+</BaseLayout>
+
+<style>
+  .intro { margin: 1rem 0 3.5rem; }
+  .kicker {
+    margin: 0 0 .3rem;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: .85rem;
+    letter-spacing: .02em;
+    color: var(--pink);
+  }
+  h1 { margin-bottom: .8rem; }
+  .tail {
+    display: block;
+    font-size: .6em;
+    font-weight: 500;
+    color: var(--purple);
+    margin-top: .2rem;
+  }
+  .lead { margin: 0; color: var(--muted); }
+</style>

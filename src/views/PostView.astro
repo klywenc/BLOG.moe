@@ -1,0 +1,123 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LangSwitch from '../components/LangSwitch.astro';
+import { formatDate, postLang, postUrl, readingTime, type Post } from '../utils';
+import { langs, localize, useTranslations, type Lang } from '../i18n';
+
+interface Props {
+  post: Post;
+  newer?: Post;
+  older?: Post;
+  translations: Post[];
+}
+
+const { post, newer, older, translations } = Astro.props;
+const lang = postLang(post);
+const t = useTranslations(lang);
+const { Content, headings } = await render(post);
+const { title, description, date, updated, tags } = post.data;
+const toc = headings.filter((h) => h.depth === 2);
+
+const alternates = Object.fromEntries(
+  langs.map((l) => {
+    const tr = translations.find((p) => postLang(p) === l);
+    return [l, tr ? postUrl(tr) : null];
+  }),
+) as Record<Lang, string | null>;
+---
+
+<BaseLayout title={title} description={description} alternates={alternates}>
+  <article>
+    <header class="post-header">
+      <p class="meta">
+        <time datetime={date.toISOString()}>{formatDate(date)}</time>
+        {updated && <span> · {t('post.updated')} {formatDate(updated)}</span>}
+        <span> · {readingTime(post.body)} {t('post.minRead')}</span>
+      </p>
+      <h1>{title}</h1>
+      <p class="desc">{description}</p>
+      <div class="row">
+        {tags.length > 0 && (
+          <div class="tags">
+            {tags.map((tag) => <a class="tag" href={localize(lang, `/tags/${tag}/`)}>{tag}</a>)}
+          </div>
+        )}
+        <div class="read-in">
+          <span class="muted">{t('post.readIn')}</span>
+          <LangSwitch lang={lang} alternates={alternates} variant="full" missingLabel={t('post.noTranslation')} />
+        </div>
+      </div>
+    </header>
+
+    {toc.length > 2 && (
+      <details class="toc">
+        <summary>{t('post.toc')}</summary>
+        <ol>
+          {toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}
+        </ol>
+      </details>
+    )}
+
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+
+  <nav class="pager" aria-label="More posts">
+    {older ? <a href={postUrl(older)}><span class="dir">{t('post.older')}</span>{older.data.title}</a> : <span />}
+    {newer ? <a href={postUrl(newer)} class="next"><span class="dir">{t('post.newer')}</span>{newer.data.title}</a> : <span />}
+  </nav>
+</BaseLayout>
+
+<style>
+  .post-header { margin: 1rem 0 2.5rem; }
+  .meta { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); margin: 0 0 .4rem; }
+  .meta time { color: var(--pink); }
+  .desc { color: var(--muted); margin: 0 0 1.2rem; font-size: 1.05rem; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem; }
+  .tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .read-in { display: flex; align-items: center; gap: .5rem; font-family: var(--font-head); font-size: .8rem; }
+
+  .toc {
+    border-left: 3px solid var(--pink);
+    padding: .4rem 1rem;
+    margin-bottom: 2rem;
+    background: var(--bg-soft);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: .93rem;
+  }
+  .toc summary { cursor: pointer; font-family: var(--font-head); font-weight: 700; font-size: .82rem; color: var(--purple); }
+  .toc ol { margin: .5rem 0 .2rem; padding-left: 1.3rem; }
+
+  .prose :global(h2)::before {
+    content: '#';
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--pink);
+    margin-right: .45rem;
+  }
+  .prose :global(h3) { color: var(--purple); }
+  .prose :global(li) { margin: .3rem 0; }
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .pager a {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    text-decoration: none;
+    font-family: var(--font-head);
+    font-weight: 700;
+    color: var(--fg-strong);
+  }
+  .pager a:hover { color: var(--purple); }
+  .pager .next { text-align: right; }
+  .dir { font-weight: 500; font-size: .78rem; color: var(--pink); }
+</style>

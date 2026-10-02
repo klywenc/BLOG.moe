@@ -1,0 +1,74 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Search from '../components/Search.astro';
+import { SITE_TITLE, SITE_SUBTITLE } from '../consts';
+import { langs, langFromUrl, localize, stripLang, useTranslations, type Lang } from '../i18n';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** URL of this page in each language; null = not available */
+  alternates?: Partial<Record<Lang, string | null>>;
+}
+
+const lang = langFromUrl(Astro.url);
+const t = useTranslations(lang);
+const { title, description = t('site.description') } = Astro.props;
+
+const base = stripLang(Astro.url.pathname);
+const alternates = Object.fromEntries(
+  langs.map((l) => [l, Astro.props.alternates?.[l] === undefined ? localize(l, base) : Astro.props.alternates[l]]),
+) as Record<Lang, string | null>;
+
+const fullTitle = title ? `${title} · ${SITE_TITLE}` : `${SITE_TITLE} · ${SITE_SUBTITLE}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {langs.map((l) => alternates[l] && <link rel="alternate" hreflang={l} href={new URL(alternates[l]!, Astro.site)} />)}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title={SITE_TITLE} href={localize(lang, '/rss.xml')} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={lang === 'pl' ? 'pl_PL' : 'en_US'} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- set theme before paint to avoid a flash -->
+    <script is:inline>
+      (() => {
+        let theme;
+        try { theme = localStorage.getItem('theme'); } catch {}
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <Header lang={lang} alternates={alternates} />
+    <main>
+      <slot />
+    </main>
+    <Footer lang={lang} />
+    <Search lang={lang} />
+  </body>
+</html>

@@ -1,0 +1,198 @@
+/* ───────────── tokens ───────────── */
+:root {
+  --bg: #faf7fd;
+  --bg-soft: #f2ecfa;
+  --fg: #3a3150;
+  --fg-strong: #241c37;
+  --muted: #8a80a0;
+  --border: #e4dbf1;
+
+  --purple: #7655c4;
+  --purple-soft: #ece4fa;
+  --pink: #cf5f8e;
+  --pink-soft: #fbe5ef;
+
+  --code-bg: #f6f1fb;
+  --selection: #f5cde0;
+
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: var(--font-body);
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+  --radius: 8px;
+  --width: 42rem;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #0f1220;
+  --bg-soft: #161a2e;
+  --fg: #cdd0e8;
+  --fg-strong: #ecebfa;
+  --muted: #7c81a5;
+  --border: #262a46;
+
+  --purple: #b39bf4;
+  --purple-soft: #211e3c;
+  --pink: #f4a2c6;
+  --pink-soft: #2a1e35;
+
+  --code-bg: #121629;
+  --selection: #3d2f5e;
+  color-scheme: dark;
+}
+
+/* ───────────── base ───────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-top: 3px solid;
+  border-image: linear-gradient(90deg, var(--purple), var(--pink)) 1;
+}
+
+::selection { background: var(--selection); }
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--width);
+  margin: 0 auto;
+  padding: 2.5rem 1rem 4rem;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-head);
+  color: var(--fg-strong);
+  line-height: 1.35;
+  font-weight: 650;
+  margin: 2.4rem 0 .8rem;
+}
+h1 { font-size: 1.85rem; margin-top: 0; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.1rem; }
+
+a {
+  color: var(--purple);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--purple) 35%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+a:hover { color: var(--pink); text-decoration-color: var(--pink); }
+
+hr {
+  border: 0;
+  height: 1px;
+  width: 30%;
+  margin: 3rem auto;
+  background: linear-gradient(90deg, transparent, var(--purple), var(--pink), transparent);
+  opacity: .6;
+}
+
+img { max-width: 100%; height: auto; border-radius: var(--radius); }
+
+blockquote {
+  margin: 1.6rem 0;
+  padding: .5rem 1.1rem;
+  border-left: 3px solid var(--purple);
+  background: var(--purple-soft);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+blockquote p { margin: .3rem 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+  margin: 1.6rem 0;
+  display: block;
+  overflow-x: auto;
+}
+th, td { border-bottom: 1px solid var(--border); padding: .45rem .8rem .45rem 0; text-align: left; }
+th { font-family: var(--font-head); font-weight: 700; color: var(--purple); border-bottom-width: 2px; }
+
+ul li::marker, ol li::marker { color: var(--pink); }
+
+/* ───────────── code ───────────── */
+code, kbd, pre { font-family: var(--font-mono); }
+
+:not(pre) > code {
+  font-size: .85em;
+  font-weight: 500;
+  padding: .1em .4em;
+  border-radius: 5px;
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
+kbd {
+  font-size: .8em;
+  padding: .05em .45em;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--bg-soft);
+}
+
+pre {
+  font-size: .85rem;
+  line-height: 1.6;
+  padding: 1rem 1.2rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--code-bg) !important;
+  overflow-x: auto;
+  margin: 1.6rem 0;
+}
+
+/* Shiki dual themes: light colors are inline; swap to dark vars */
+:root[data-theme='dark'] .astro-code,
+:root[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+}
+
+/* ───────────── shared bits ───────────── */
+.muted { color: var(--muted); }
+
+/* small section label: // latest posts */
+.label {
+  display: flex;
+  align-items: baseline;
+  gap: .4rem;
+  margin: 0 0 .6rem;
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: var(--purple);
+  letter-spacing: 0;
+}
+.label::before { content: "//"; color: var(--pink); }
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  text-decoration: none;
+  color: var(--purple);
+  padding: .05rem .55rem;
+  border-radius: 999px;
+  background: var(--purple-soft);
+  white-space: nowrap;
+}
+.tag::before { content: '#'; color: var(--pink); margin-right: .1em; }
+.tag:hover { color: var(--pink); background: var(--pink-soft); }
+

@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="404">
+  <div class="wrap">
+    <p class="code">segfault (core dumped)</p>
+    <h1>404 <span class="kao" aria-hidden="true">(╥﹏╥)</span></h1>
+    <p class="muted">This page dereferenced a null pointer. <a href="/">Go home</a>.</p>
+    <p class="muted" lang="pl">Ta strona nie istnieje. <a href="/pl/">Wróć na start</a>.</p>
+  </div>
+</BaseLayout>
+
+<style>
+  .wrap { text-align: center; padding-top: 4rem; }
+  .code { font-family: var(--font-mono); color: var(--pink); font-size: .85rem; margin: 0; }
+  .kao { color: var(--purple); font-weight: 500; font-size: .7em; }
+  .wrap p.muted { margin: .3rem 0; }
+</style>

@@ -1,0 +1,47 @@
+---
+import { langs, languages, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  alternates: Record<Lang, string | null>;
+  /** "full" shows language names instead of codes */
+  variant?: 'short' | 'full';
+  missingLabel?: string;
+}
+
+const { lang, alternates, variant = 'short', missingLabel } = Astro.props;
+---
+
+<div class:list={['switch', variant]} role="group" aria-label="Language">
+  {langs.map((l) => {
+    const text = variant === 'full' ? languages[l] : l.toUpperCase();
+    if (l === lang) return <span class="on" aria-current="true" lang={l}>{text}</span>;
+    const href = alternates[l];
+    return href
+      ? <a href={href} hreflang={l} lang={l}>{text}</a>
+      : <span class="off" title={missingLabel} lang={l}>{text}</span>;
+  })}
+</div>
+
+<style>
+  .switch {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--purple-soft);
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: .72rem;
+  }
+  .switch.full { font-size: .8rem; }
+  a, span {
+    padding: .15rem .55rem;
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--purple);
+    line-height: 1.5;
+  }
+  a:hover { color: var(--pink); }
+  .on { background: var(--bg); color: var(--fg-strong); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+  .off { opacity: .4; cursor: not-allowed; }
+</style>
