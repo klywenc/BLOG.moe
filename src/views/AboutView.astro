@@ -11,16 +11,19 @@ const t = useTranslations(lang);
 
 const specs = {
   en: [
-    ['os', 'linux, mostly'],
-    ['editor', 'vscode / nvim'],
-    ['langs', 'c, rust, typescript, python'],
-    ['likes', 'low-level stuff, retro hardware, tea'],
+    ['os', 'Windows, Linux, Mac'],
+    ['editor', 'vscode, nano'],
+    ['langs', 'c/c++, rust, erlang, typescript'],
+    ['likes', 'low-level stuff, retro hardware, Pipeline Punch Monster,'],
+    ['dislikes', 'AI-Slop and AI in general, Life, Guys who pretends that they are smarter, than they really are,'],
   ],
   pl: [
-    ['os', 'głównie linux'],
-    ['edytor', 'vscode / nvim'],
-    ['języki', 'c, rust, typescript, python'],
-    ['lubię', 'niskopoziomowe rzeczy, stary sprzęt, herbatę'],
+    ['os', 'Windows, Linux, Mac'],
+    ['distro', 'CachyOS - main, RHEL - Mini server, Fedora - Workstation'],
+    ['edytor', 'vscode / nano'],
+    ['języki', 'c, rust, erlang, typescript, ale jezyk to tylko narzedzie'],
+    ['lubię', 'niskopoziomowe rzeczy, stary sprzęt, Różowego Monstera'],
+    ['nie lubię', 'AI Slopu i AI gówna, Life, RLudzi którzy wyżej srają niż dupę mają'],
   ],
 }[lang];
 ---
@@ -34,11 +37,14 @@ const specs = {
       <p>
         This is where I write about software, hardware and programming, mostly the
         low-level, poke-it-until-it-breaks kind. Expect deep dives, debugging stories,
-        half-finished side projects and the occasional rant.
+        half-finished side projects and the occasional rant, my jorney of learning how to
+        code low level stuffs in AI era, and how to adapt to that shit
       </p>
       <p>
         Everything here is my own opinion and probably wrong in at least one interesting
         way. If you spot it, tell me.
+        B.Eng in Computer Science at <a href="https://study.ans-elblag.pl/">University of Applied Sciences in Elbląg</a>
+        
       </p>
     </>
   ) : (
@@ -51,6 +57,7 @@ const specs = {
       <p>
         Wszystko tu to moje zdanie i pewnie w co najmniej jednym ciekawym miejscu jest
         błędne. Jak coś znajdziesz, daj znać.
+        Inżynier Informatyki <a href="https://ans-elblag.pl/">Akademia Nauk Stosowanych w Elblągu</a>
       </p>
     </>
   )}
