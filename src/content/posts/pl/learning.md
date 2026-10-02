@@ -28,11 +28,10 @@ Trzeba po prostu robić to, co się lubi.
 ## Język C 
 
 W pewnym momencie, może właśnie przez AI, doszedłem do wniosku, że trzeba wrócić do korzeni. Embedded był jednym z pierwszych działów informatyki, z jakimi się zetknąłem. Jeszcze w szkole średniej kupiłem Arduino i za pomocą Arduino IDE oraz gotowych bibliotek zrobiłem kilka ciekawych, choć dość prostych projektów. Był wśród nich kontroler do japońskich gier rytmicznych i klawiatury oparte na mikrokontrolerze firmy Atmel, siedzącym na płytkach Arduino Leonardo i Pro Micro.
-Te dwie płytki nie wzięły się tam przypadkiem: ich mikrokontroler ma wbudowaną obsługę USB, więc komputer może go widzieć jako zwykłą klawiaturę albo gamepad, bez żadnych dodatkowych układów.
 Co ciekawe, próg wejścia w Arduino jest absurdalnie niski. Na tyle niski, że nie trzeba nic wiedzieć o architekturze komputera, mikroprocesora czy mikrokontrolera. Wystarczy znać podstawy. Piszesz digitalWrite(13, HIGH) i dioda się zapala, a to, że pod spodem jest zapis do konkretnego rejestru portu, pozostaje ukryte. To nie jest wada, tylko świadomy wybór.
 Arduino powstało raczej z myślą o ludziach, którzy chcą szybko zrobić hobbystyczny projekt, na przykład z robotyki, a nie rozkładać procesor na części.
 Na studiach programowałem już w C++ na mikrokontrolerach STM32, korzystając z biblioteki HAL, Zephyra albo FreeRTOS-a. Każde z tych narzędzi też coś przede mną chowało, tylko na nieco niższym poziomie niż Arduino. Teraz chciałem zrobić coś na bare metalu, czyli bez systemu i bez gotowych bibliotek, pisząc bezpośrednio do rejestrów sprzętu.
-I wtedy zdałem sobie sprawę z jednej prostej rzeczy: kompletnie zapomniałem, jak się programuje w C, a moje umiejętności w tym języku są na bardzo niskim poziomie.
+I wtedy zdałem sobie sprawę z jednej prostej rzeczy kompletnie zapomniałem, jak się programuje a moje umiejętności C SĄ TRAGICZNE!
 
 ## AI jako nauczyciel
 
@@ -43,6 +42,3 @@ Najważniejsza zasada, jaką sobie ustaliłem: kod piszę ja, a nie AI. Model t�
 Wygląda to mniej więcej tak. Czytam rozdział K&R, a kiedy coś jest dla mnie niejasne, pytam. Nie zadowalam się odpowiedzią „tak po prostu jest”, tylko dopytuję, co się dzieje pod spodem: gdzie w pamięci ląduje zmienna, co dokładnie przechowuje wskaźnik, dlaczego tablica w pewnych sytuacjach zachowuje się jak wskaźnik, a w innych nie. Potem piszę ćwiczenia i wrzucam swój kod do oceny. Na koniec model mnie przepytuje, często pytaniami, na które nie da się odpowiedzieć, jeśli tylko przeczytało się tekst, a nie zrozumiało go.
 Kolejność też ma znaczenie. Na początku chciałem od razu rzucić się na bare metal, ale szybko okazało się, że startup code, linker i rejestry naraz to za dużo, kiedy człowiek nie czuje się pewnie ze wskaźnikami. Dlatego najpierw sam język na zwykłym komputerze, a dopiero potem powrót do mikrokontrolerów.
 Druga rzecz to wspomniane samouczki. Równolegle do nauki C powstaje mój własny poradnik o tym, jak embedded działa od środka: architektura ARM i STM32, trochę RISC-V i różnice w stosunku do x86. Ogólne pojęcia typu DMA znam, ale nie do końca rozumiem, co w tym czasie dzieje się w rejestrach, i właśnie tę lukę chcę wypełnić. Poradnik powstaje rozdział po rozdziale, jako PDF z rysunkami, i czytam go wieczorem przed snem. Jeden rozdział naraz, w porcji, którą da się zapamiętać, a nie sto stron, które przelecą przez głowę.
-## Gdzie trzeba uważać:
-
-Sekcję o tym, jak korzystasz z AI, napisałem na podstawie tego, jak faktycznie wygląda Twoja nauka: K&R z tłumaczeniem i przepytywaniem, najpierw wskaźniki na PC, potem sprzęt, oraz poradnik PDF czytany przed snem. Od siebie dodałem zasadę „kod piszę ja”, część o weryfikowaniu odpowiedzi i ostatni akapit, który spina ten wpis z pierwszym. Śródtytuły możesz usunąć, jeśli wolisz jednolity tekst.
