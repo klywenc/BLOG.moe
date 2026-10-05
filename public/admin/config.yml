@@ -1,0 +1,50 @@
+# Sveltia CMS: https://github.com/sveltia/sveltia-cms
+# Posts are saved as commits to GitHub; Cloudflare Pages rebuilds the site on push.
+backend:
+  name: github
+  repo: klywenc/BLOG.moe
+  branch: main
+
+site_url: https://blog.mequ.moe
+display_url: https://blog.mequ.moe
+
+media_folder: public/images
+public_folder: /images
+
+# src/content/posts/<lang>/<slug>.md
+i18n:
+  structure: multiple_folders
+  locales: [pl, en]
+  default_locale: pl
+
+collections:
+  - name: posts
+    label: Posts
+    label_singular: Post
+    folder: src/content/posts
+    extension: md
+    format: frontmatter
+    create: true
+    slug: '{{slug}}'
+    i18n: true
+    summary: '{{title}} ({{date}})'
+    sortable_fields: [date, title]
+    fields:
+      - { name: title, label: Title, widget: string, i18n: true }
+      - { name: description, label: Description, widget: text, i18n: true }
+      - name: date
+        label: Date
+        widget: datetime
+        format: YYYY-MM-DD
+        time_format: false
+        i18n: duplicate
+      - name: updated
+        label: Updated
+        widget: datetime
+        format: YYYY-MM-DD
+        time_format: false
+        required: false
+        i18n: duplicate
+      - { name: tags, label: Tags, widget: list, required: false, i18n: duplicate }
+      - { name: draft, label: Draft, widget: boolean, default: false, required: false, i18n: duplicate }
+      - { name: body, label: Body, widget: markdown, i18n: true }
